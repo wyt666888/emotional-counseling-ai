@@ -1,28 +1,52 @@
+# 环境变量（包含 API Key，绝对不能上传！）
+.env
+*.env
+backend/.env
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 venv/
+env/
 ENV/
-.env
-*.db
+*.egg-info/
+.pytest_cache/
+*.pyc
 
-# Node
+# Node.js
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 dist/
 build/
-.DS_Store
-*.log
-npm-debug.log*
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
+.DS_Store
 Thumbs.db
+desktop.ini
+
+# 备份文件
+*.backup
+*.bak
+*_old.py
+counselor_old.py
+counselor.py.backup
+
+# 日志
+*.log
+logs/
+
+# Git
+.git/
