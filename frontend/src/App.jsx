@@ -126,12 +126,22 @@ function App() {
   const handleToggleTranslation = () => {
     setTranslationEnabled(!translationEnabled);
     if (!translationEnabled) {
-      // When enabling translation, translate all existing messages
-      messages.forEach((msg, index) => {
-        if (!translatedMessages[index]) {
-          translateMessage(msg.content, index);
-        }
-      });
+      // When enabling translation, translate messages in batches to avoid rate limiting
+      // Translate in batches of 3 messages at a time with 500ms delay between batches
+      const batchSize = 3;
+      const delay = 500;
+      
+      for (let i = 0; i < messages.length; i += batchSize) {
+        const batch = messages.slice(i, i + batchSize);
+        setTimeout(() => {
+          batch.forEach((msg, batchIndex) => {
+            const actualIndex = i + batchIndex;
+            if (!translatedMessages[actualIndex]) {
+              translateMessage(msg.content, actualIndex);
+            }
+          });
+        }, (i / batchSize) * delay);
+      }
     }
   };
 

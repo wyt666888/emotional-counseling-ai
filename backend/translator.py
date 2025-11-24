@@ -6,6 +6,14 @@ Supports automatic language detection and bidirectional translation
 from deep_translator import GoogleTranslator
 import re
 
+# Unicode range for CJK Unified Ideographs (Chinese characters)
+CJK_START = '\u4e00'
+CJK_END = '\u9fff'
+
+# Threshold for determining if text is primarily Chinese
+# If Chinese characters make up more than this percentage, text is classified as Chinese
+CHINESE_THRESHOLD = 0.3
+
 class TranslationService:
     """Service for translating text between Chinese and English"""
     
@@ -31,12 +39,12 @@ class TranslationService:
                 return 'en'
             
             # Simple heuristic: check for Chinese characters
-            # Count Chinese characters (CJK Unified Ideographs)
-            chinese_chars = sum(1 for char in text if '\u4e00' <= char <= '\u9fff')
+            # Count Chinese characters using defined Unicode range
+            chinese_chars = sum(1 for char in text if CJK_START <= char <= CJK_END)
             total_chars = len(text.replace(' ', ''))
             
-            # If more than 30% are Chinese characters, consider it Chinese
-            if total_chars > 0 and (chinese_chars / total_chars) > 0.3:
+            # If Chinese characters exceed threshold, consider it Chinese
+            if total_chars > 0 and (chinese_chars / total_chars) > CHINESE_THRESHOLD:
                 return 'zh-CN'
             else:
                 return 'en'
