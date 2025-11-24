@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from counselor import EmotionalCounselor
 from utils import validate_message, sanitize_input
+from translator import TranslationService
 import os
 from dotenv import load_dotenv
 
@@ -12,6 +13,9 @@ CORS(app)
 
 # 初始化咨询师
 counselor = EmotionalCounselor(api_key=os.getenv('OPENAI_API_KEY'))
+
+# 初始化翻译服务
+translation_service = TranslationService()
 
 # 存储会话（生产环境建议使用 Redis）
 sessions = {}
@@ -84,6 +88,61 @@ def delete_session(session_id):
         del sessions[session_id]
         return jsonify({'message': '会话已删除'})
     return jsonify({'error': '会话不存在'}), 404
+
+@app.route('/api/translate', methods=['POST'])
+def translate():
+    """翻译文本"""
+    try:
+        data = request.json
+        
+        # 验证输入
+        if not data or 'text' not in data:
+            return jsonify({'error': '缺少文本参数'}), 400
+        
+        text = data.get('text', '').strip()
+        target_lang = data.get('target_lang')  # 可选：'zh-cn' 或 'en'
+        source_lang = data.get('source_lang')  # 可选：源语言
+        
+        if not text:
+            return jsonify({'error': '文本不能为空'}), 400
+        
+        # 执行翻译
+        result = translation_service.translate(
+            text=text,
+            target_lang=target_lang,
+            source_lang=source_lang
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Translation API error: {str(e)}")
+        return jsonify({'error': '翻译服务暂时不可用'}), 500
+
+@app.route('/api/translate/detect', methods=['POST'])
+def detect_language():
+    """检测文本语言"""
+    try:
+        data = request.json
+        
+        if not data or 'text' not in data:
+            return jsonify({'error': '缺少文本参数'}), 400
+        
+        text = data.get('text', '').strip()
+        
+        if not text:
+            return jsonify({'error': '文本不能为空'}), 400
+        
+        detected_lang = translation_service.detect_language(text)
+        
+        return jsonify({
+            'detected_language': detected_lang,
+            'text': text
+        })
+        
+    except Exception as e:
+        print(f"Language detection API error: {str(e)}")
+        return jsonify({'error': '语言检测服务暂时不可用'}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
