@@ -69,6 +69,39 @@ npm run dev
 6. **开始使用**
 打开浏览器访问 `http://localhost:3000`
 
+### 🪟 Windows 一键启动
+
+Windows 用户可以使用一键启动脚本，自动完成所有启动步骤：
+
+#### 首次使用准备
+
+1. 确保已安装 [Python 3.9+](https://www.python.org/downloads/) 和 [Node.js 18+](https://nodejs.org/)
+2. 配置后端环境变量：
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   copy .env.example .env
+   # 编辑 .env 文件，填入你的 OPENAI_API_KEY
+   ```
+
+#### 启动服务
+
+双击运行项目根目录下的 `start.bat`，脚本将自动：
+- ✅ 检查 Python 和 Node.js 环境
+- ✅ 安装前端依赖（首次运行时）
+- ✅ 启动后端 Flask 服务（端口 5000）
+- ✅ 启动前端 Vite 开发服务器（端口 3000）
+- ✅ 自动打开浏览器访问应用
+
+#### 停止服务
+
+双击运行 `stop.bat`，脚本将：
+- 🛑 关闭后端 Python 服务
+- 🛑 关闭前端 Node.js 服务
+- 🧹 清理端口占用
+
+> 💡 **提示**：也可以直接关闭服务窗口来停止对应的服务
+
 ## 📁 项目结构
 
 ```
