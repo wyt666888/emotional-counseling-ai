@@ -1,160 +1,185 @@
 @echo off
-chcp 65001 >nul 2>&1
 setlocal EnableDelayedExpansion
 
 :: ============================================================
-:: Emotional Counseling AI - Windows 一键启动脚本
+:: Emotional Counseling AI - Smart Start Script
 :: ============================================================
 
-title Emotional Counseling AI - 启动中...
+title Emotional Counseling AI - Starting...
 
 echo.
 echo ============================================================
-echo    💖 Emotional Counseling AI - 恋爱情绪咨询 AI
+echo    Emotional Counseling AI - Smart Start Script
 echo ============================================================
 echo.
 
-:: 检查 Python 环境
-echo [检查] 正在检查 Python 环境...
+:: Get script directory
+set "SCRIPT_DIR=%~dp0"
+cd /d "%SCRIPT_DIR%"
+
+:: Check Python environment
+echo [CHECK] Checking Python environment...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] 未找到 Python，请先安装 Python 3.9+
-    echo        下载地址: https://www.python.org/downloads/
+    echo [ERROR] Python not found. Please install Python 3.9+
+    echo         Download: https://www.python.org/downloads/
     pause
     exit /b 1
 )
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-echo [成功] Python 版本: %PYTHON_VERSION%
+echo [OK] Python version: %PYTHON_VERSION%
 
-:: 检查 Node.js 环境
-echo [检查] 正在检查 Node.js 环境...
+:: Check Node.js environment
+echo [CHECK] Checking Node.js environment...
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] 未找到 Node.js，请先安装 Node.js 18+
-    echo        下载地址: https://nodejs.org/
+    echo [ERROR] Node.js not found. Please install Node.js 18+
+    echo         Download: https://nodejs.org/
     pause
     exit /b 1
 )
 for /f %%i in ('node --version 2^>^&1') do set NODE_VERSION=%%i
-echo [成功] Node.js 版本: %NODE_VERSION%
+echo [OK] Node.js version: %NODE_VERSION%
 
-:: 检查 npm 环境
-echo [检查] 正在检查 npm 环境...
+:: Check npm environment
+echo [CHECK] Checking npm environment...
 npm --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] 未找到 npm，请检查 Node.js 安装
+    echo [ERROR] npm not found. Please check Node.js installation
     pause
     exit /b 1
 )
 for /f %%i in ('npm --version 2^>^&1') do set NPM_VERSION=%%i
-echo [成功] npm 版本: %NPM_VERSION%
+echo [OK] npm version: %NPM_VERSION%
 
 echo.
 echo ============================================================
-echo    正在启动服务...
+echo    Starting services...
 echo ============================================================
 echo.
 
-:: 获取脚本所在目录
-set "SCRIPT_DIR=%~dp0"
-cd /d "%SCRIPT_DIR%"
-
-:: 检查后端目录
+:: Check backend directory
 if not exist "backend\app.py" (
-    echo [错误] 未找到后端文件 backend\app.py
-    echo        请确保在正确的项目目录下运行此脚本
+    echo [ERROR] Backend file not found: backend\app.py
+    echo         Please run this script from the project root directory
     pause
     exit /b 1
 )
 
-:: 检查前端目录
+:: Check frontend directory
 if not exist "frontend\package.json" (
-    echo [错误] 未找到前端文件 frontend\package.json
-    echo        请确保在正确的项目目录下运行此脚本
+    echo [ERROR] Frontend file not found: frontend\package.json
+    echo         Please run this script from the project root directory
     pause
     exit /b 1
 )
 
-:: 检查前端依赖是否已安装
+:: Check if frontend dependencies are installed
 if not exist "frontend\node_modules" (
-    echo [提示] 首次运行，正在安装前端依赖...
+    echo [INFO] First run - Installing frontend dependencies...
+    echo        This may take a few minutes, please wait...
     cd frontend
-    npm install
+    call npm install
     if %errorlevel% neq 0 (
-        echo [错误] 前端依赖安装失败
+        echo [ERROR] Frontend dependency installation failed
         pause
         exit /b 1
     )
     cd ..
-    echo [成功] 前端依赖安装完成
+    echo [OK] Frontend dependencies installed successfully
+    echo.
 )
 
-:: 启动后端服务
-echo [启动] 正在启动后端服务 (端口 5000)...
-start "Flask Backend - 后端服务" cmd /k "cd /d %SCRIPT_DIR%backend && python app.py"
+:: Start backend service
+echo [START] Starting backend service (port 5000)...
+start "Backend - Flask Server" cmd /k "cd /d "%SCRIPT_DIR%backend" && python app.py"
 
-:: 等待后端服务启动
-echo [等待] 等待后端服务启动...
+:: Wait for backend to start
+echo [WAIT] Waiting for backend service to start...
 set /a count=0
 :wait_backend
 timeout /t 1 >nul
 set /a count+=1
-powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:5000/api/health' -UseBasicParsing -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+netstat -ano 2>nul | findstr "LISTENING" | findstr ":5000 " >nul 2>&1
 if %errorlevel% equ 0 (
-    echo [成功] 后端服务已启动
+    echo [OK] Backend service started on port 5000
     goto backend_ready
 )
-if %count% geq 30 (
-    echo [警告] 后端服务启动超时，继续启动前端...
+if %count% geq 15 (
+    echo [WARN] Backend startup timeout, continuing with frontend...
     goto backend_ready
 )
 goto wait_backend
 
 :backend_ready
-
-:: 启动前端服务
-echo [启动] 正在启动前端服务 (端口 3000)...
-start "Vite Frontend - 前端服务" cmd /k "cd /d %SCRIPT_DIR%frontend && npm run dev"
-
-:: 等待前端服务启动
-echo [等待] 等待前端服务启动...
-set /a count=0
-:wait_frontend
-timeout /t 1 >nul
-set /a count+=1
-powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:3000' -UseBasicParsing -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [成功] 前端服务已启动
-    goto frontend_ready
-)
-if %count% geq 30 (
-    echo [警告] 前端服务启动超时，尝试打开浏览器...
-    goto frontend_ready
-)
-goto wait_frontend
-
-:frontend_ready
-
-:: 等待一下确保服务稳定
-timeout /t 2 >nul
-
-:: 打开浏览器
 echo.
-echo [打开] 正在打开浏览器...
-start "" http://localhost:3000
+
+:: Start frontend service
+echo [START] Starting frontend service (Vite will auto-select available port)...
+start "Frontend - Vite Server" cmd /k "cd /d "%SCRIPT_DIR%frontend" && npm run dev"
+
+:: Wait for frontend to start and detect actual port
+echo [WAIT] Waiting for frontend service to start...
+timeout /t 5 >nul
+
+:: Smart port detection - check common Vite ports
+echo [DETECT] Detecting frontend port...
+set "FRONTEND_PORT="
+
+:: Check ports in order: 3000, 3001, 3002, 5173
+for %%p in (3000 3001 3002 5173) do (
+    if not defined FRONTEND_PORT (
+        netstat -ano 2>nul | findstr "LISTENING" | findstr ":%%p " >nul 2>&1
+        if !errorlevel! equ 0 (
+            set "FRONTEND_PORT=%%p"
+            echo [OK] Frontend service detected on port %%p
+        )
+    )
+)
+
+:: If no port found, wait a bit more and try again
+if not defined FRONTEND_PORT (
+    echo [WAIT] Frontend not ready yet, waiting 5 more seconds...
+    timeout /t 5 >nul
+    for %%p in (3000 3001 3002 5173) do (
+        if not defined FRONTEND_PORT (
+            netstat -ano 2>nul | findstr "LISTENING" | findstr ":%%p " >nul 2>&1
+            if !errorlevel! equ 0 (
+                set "FRONTEND_PORT=%%p"
+                echo [OK] Frontend service detected on port %%p
+            )
+        )
+    )
+)
+
+echo.
+
+:: Open browser with detected port
+if defined FRONTEND_PORT (
+    echo [OPEN] Opening browser at http://localhost:!FRONTEND_PORT!
+    start "" http://localhost:!FRONTEND_PORT!
+) else (
+    echo [WARN] Could not auto-detect frontend port
+    echo        Please check the Frontend window for the actual URL
+    echo        Common URLs: http://localhost:3000 or http://localhost:3001
+)
 
 echo.
 echo ============================================================
-echo    🎉 启动完成！
+echo    Startup Complete!
 echo ============================================================
 echo.
-echo    后端服务: http://localhost:5000
-echo    前端界面: http://localhost:3000
+echo    Backend:  http://localhost:5000
+if defined FRONTEND_PORT (
+    echo    Frontend: http://localhost:!FRONTEND_PORT!
+) else (
+    echo    Frontend: Check the Frontend window for actual URL
+)
 echo.
-echo    提示:
-echo    - 请保持两个服务窗口处于打开状态
-echo    - 关闭服务请运行 stop.bat
-echo    - 或直接关闭服务窗口
+echo    Tips:
+echo    - Keep both service windows open
+echo    - Run stop.bat to stop all services
+echo    - Or close the service windows directly
 echo.
 echo ============================================================
 echo.
