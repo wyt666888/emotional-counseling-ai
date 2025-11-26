@@ -1,69 +1,70 @@
 @echo off
-chcp 65001 >nul 2>&1
 setlocal EnableDelayedExpansion
 
 :: ============================================================
-:: Emotional Counseling AI - Windows 停止脚本
+:: Emotional Counseling AI - Stop Script
 :: ============================================================
 
-title Emotional Counseling AI - 停止服务
+title Emotional Counseling AI - Stopping Services
 
 echo.
 echo ============================================================
-echo    💖 Emotional Counseling AI - 停止服务
+echo    Emotional Counseling AI - Stop Services
 echo ============================================================
 echo.
 
-echo 此脚本将关闭所有相关的服务进程：
-echo   - Python Flask 后端服务 (端口 5000)
-echo   - Node.js Vite 前端服务 (端口 3000)
+echo This script will close all related service processes:
+echo   - Python Flask backend (port 5000)
+echo   - Node.js Vite frontend (ports 3000/3001/3002/5173)
 echo.
 
-set /p confirm="确定要停止所有服务吗？(Y/N): "
+set /p confirm="Are you sure you want to stop all services? (Y/N): "
 if /i not "%confirm%"=="Y" (
     echo.
-    echo [取消] 操作已取消
+    echo [CANCEL] Operation cancelled
     pause
     exit /b 0
 )
 
 echo.
-echo [停止] 正在停止服务...
+echo [STOP] Stopping services...
 
-:: 关闭占用 5000 端口的进程 (后端)
-echo [清理] 正在关闭后端服务 (端口 5000)...
+:: Close backend process (port 5000)
+echo [CLEAN] Stopping backend service (port 5000)...
 for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":5000 " ^| findstr "LISTENING"') do (
     if "%%a" neq "" if "%%a" neq "0" (
         taskkill /F /PID %%a >nul 2>&1
         if !errorlevel! equ 0 (
-            echo        已关闭进程 PID: %%a
+            echo         Closed process PID: %%a
         )
     )
 )
 
-:: 关闭占用 3000 端口的进程 (前端)
-echo [清理] 正在关闭前端服务 (端口 3000)...
-for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":3000 " ^| findstr "LISTENING"') do (
-    if "%%a" neq "" if "%%a" neq "0" (
-        taskkill /F /PID %%a >nul 2>&1
-        if !errorlevel! equ 0 (
-            echo        已关闭进程 PID: %%a
+:: Close frontend processes (ports 3000, 3001, 3002, 5173)
+echo [CLEAN] Stopping frontend services (ports 3000/3001/3002/5173)...
+for %%p in (3000 3001 3002 5173) do (
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p " ^| findstr "LISTENING"') do (
+        if "%%a" neq "" if "%%a" neq "0" (
+            taskkill /F /PID %%a >nul 2>&1
+            if !errorlevel! equ 0 (
+                echo         Closed process on port %%p, PID: %%a
+            )
         )
     )
 )
 
-:: 关闭标题包含后端服务的 CMD 窗口
-echo [清理] 正在关闭服务窗口...
-taskkill /FI "WINDOWTITLE eq Flask Backend - 后端服务" /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq Vite Frontend - 前端服务" /F >nul 2>&1
+:: Close service windows by title
+echo [CLEAN] Closing service windows...
+taskkill /FI "WINDOWTITLE eq Backend*" /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq Frontend*" /F >nul 2>&1
 
 echo.
 echo ============================================================
-echo    ✅ 服务已停止
+echo    Services Stopped
 echo ============================================================
 echo.
-echo    所有服务进程已关闭。
-echo    如需重新启动，请运行 start.bat
+echo    All service processes have been closed.
+echo    Run start.bat to restart the services.
 echo.
 echo ============================================================
 echo.
