@@ -56,7 +56,9 @@
 
 &nbsp; "message": "我和男朋友吵架了",
 
-&nbsp; "session\_id": "optional-session-id"
+&nbsp; "session\_id": "optional-session-id",
+
+&nbsp; "use\_rag": true  // 可选：启用/禁用 RAG
 
 }
 
@@ -74,7 +76,9 @@
 
 &nbsp; "emotion": "sad",
 
-&nbsp; "session\_id": "abc-123"
+&nbsp; "session\_id": "abc-123",
+
+&nbsp; "rag\_enabled": true
 
 }
 
@@ -220,4 +224,98 @@ curl -X POST http://localhost:5000/api/translate/detect \
   -H "Content-Type: application/json" \
   -d '{"text": "你好"}'
 ```
+
+## RAG (检索增强生成) 功能
+
+### 概述
+
+RAG 功能通过从专业知识库检索相关内容来增强 AI 回复的质量和准确性。
+
+### 启用/禁用 RAG
+
+#### 全局配置（环境变量）
+
+在 `.env` 文件中配置：
+```bash
+USE_RAG=true                    # 启用 RAG（默认）
+RAG_TOP_K=2                     # 检索结果数量
+RAG_SIMILARITY_THRESHOLD=0.3    # 相似度阈值
+```
+
+#### 请求级别控制
+
+在聊天请求中使用 `use_rag` 参数：
+
+**启用 RAG（如果默认禁用）**:
+```bash
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "我和男朋友吵架了",
+    "session_id": "test",
+    "use_rag": true
+  }'
+```
+
+**禁用 RAG（如果默认启用）**:
+```bash
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "你好",
+    "session_id": "test",
+    "use_rag": false
+  }'
+```
+
+### RAG 响应字段
+
+聊天响应包含 `rag_enabled` 字段，表示该请求是否使用了 RAG：
+
+```json
+{
+  "message": "AI 回复内容",
+  "emotion": "情绪标签",
+  "session_id": "会话ID",
+  "rag_enabled": true  // 指示是否使用了 RAG
+}
+```
+
+### RAG 工作原理
+
+1. **查询处理**: 接收用户问题
+2. **语义检索**: 从知识库中检索相关内容（使用向量相似度）
+3. **上下文增强**: 将检索到的知识与用户问题结合
+4. **生成回复**: LLM 基于增强的上下文生成回复
+
+### 配置参数说明
+
+- **USE_RAG**: 全局启用/禁用 RAG
+  - `true`: 启用（推荐）
+  - `false`: 禁用
+  
+- **RAG_TOP_K**: 检索结果数量
+  - 范围: 1-5
+  - 推荐: 2
+  - 更多结果 = 更全面但可能更慢
+  
+- **RAG_SIMILARITY_THRESHOLD**: 相似度阈值
+  - 范围: 0.0-1.0
+  - 推荐: 0.3
+  - 更高阈值 = 更精确但可能检索不到结果
+  - 更低阈值 = 更多结果但相关性可能较低
+
+### 使用建议
+
+1. **一般咨询**: 启用 RAG，获得专业建议
+2. **闲聊对话**: 可以禁用 RAG，更自然的对话
+3. **专业问题**: 启用 RAG 并设置较高的 top_k 值
+
+### 性能影响
+
+- **首次请求**: 可能需要 1-2 秒（加载模型）
+- **后续请求**: 通常 < 500ms（使用缓存）
+- **禁用 RAG**: 响应速度提升约 200-300ms
+
+详细的 RAG 功能文档请查看 [RAG_FEATURE.md](RAG_FEATURE.md)
 

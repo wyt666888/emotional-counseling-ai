@@ -15,6 +15,7 @@
 - 📊 **情绪分析**：智能识别用户情绪状态
 - 🆘 **危机干预**：自动识别危机关键词并提供紧急帮助
 - 🌐 **中英翻译**：支持中英文实时翻译，自动语言检测，打破语言障碍
+- 🧠 **RAG 增强**：使用检索增强生成技术，提供更准确、更专业的咨询建议
 
 ## 🚀 快速开始
 
@@ -216,11 +217,106 @@ print('翻译结果:', result['translated_text'])  # 应输出英文翻译
 
 完整的翻译功能文档请查看 [TRANSLATION_FEATURE.md](docs/TRANSLATION_FEATURE.md)
 
+## 🧠 RAG (检索增强生成) 功能
+
+### 什么是 RAG？
+RAG (Retrieval-Augmented Generation) 是一种结合信息检索和生成式 AI 的技术，通过从知识库中检索相关信息来增强 AI 的回复质量。
+
+### 功能特性
+- **语义搜索**：使用向量嵌入实现智能语义匹配，而非简单的关键词匹配
+- **专业知识库**：包含情感咨询、恋爱技巧、心理学原理等专业内容
+- **动态检索**：根据用户问题动态检索最相关的咨询知识
+- **上下文增强**：将检索到的专业知识融入 AI 回复，提供更准确的建议
+- **缓存优化**：对频繁检索的内容进行缓存，提升响应速度
+
+### 技术实现
+- **向量数据库**：使用 ChromaDB 存储和检索文档向量
+- **嵌入模型**：使用 Sentence-Transformers 生成多语言嵌入
+- **相似度计算**：基于余弦相似度进行语义匹配
+
+### 配置说明
+
+RAG 功能通过环境变量配置，在 `.env` 文件中设置：
+
+```bash
+# 启用/禁用 RAG（默认：启用）
+USE_RAG=true
+
+# 检索结果数量（默认：2）
+RAG_TOP_K=2
+
+# 相似度阈值，0-1 之间（默认：0.3）
+RAG_SIMILARITY_THRESHOLD=0.3
+```
+
+### 使用示例
+
+#### 启用 RAG（默认）
+```bash
+# 在 API 请求中不需要额外参数，RAG 会自动工作
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "我和男朋友吵架了", "session_id": "test"}'
+```
+
+#### 临时禁用 RAG
+```bash
+# 在特定请求中禁用 RAG
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "你好", "session_id": "test", "use_rag": false}'
+```
+
+### RAG 如何提升回复质量
+
+**不使用 RAG：**
+AI 仅基于通用训练知识回答，可能缺乏针对性。
+
+**使用 RAG：**
+1. 用户提问："我和男朋友吵架后他不理我怎么办？"
+2. 系统从知识库检索相关内容（如"吵架和解"主题）
+3. AI 结合检索到的专业知识给出建议
+4. 回复更具针对性、更专业、更实用
+
+### 知识库内容
+
+当前知识库包含以下主题：
+- 表白技巧
+- 吵架和解
+- 失恋疗愈
+- 异地恋维持
+- 恋爱沟通
+- 父母反对
+- 信任建立
+- 情绪管理
+- 约会技巧
+- 关系边界
+- 复合建议
+- 性与亲密
+- 婚姻准备
+
+### 扩展知识库
+
+开发者可以通过编辑 `backend/knowledge_base.json` 添加新的咨询主题：
+
+```json
+{
+  "主题名称": {
+    "keywords": ["关键词1", "关键词2"],
+    "content": "专业建议内容...",
+    "examples": ["示例问答..."]
+  }
+}
+```
+
+添加新内容后，重启服务即可自动加载。
+
 ## 🛠️ 技术栈
 
 - **后端**: Flask, OpenAI API, Python 3.9+, Deep-Translator
 - **前端**: React 18, Vite, Tailwind CSS, Lucide React
 - **翻译服务**: Google Translate API (via deep-translator)
+- **RAG 技术**: ChromaDB, Sentence-Transformers, Vector Embeddings
 
 ## ⚠️ 免责声明
 
