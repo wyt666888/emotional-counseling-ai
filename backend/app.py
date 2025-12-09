@@ -12,7 +12,17 @@ app = Flask(__name__)
 CORS(app)
 
 # 初始化咨询师
-counselor = EmotionalCounselor(api_key=os.getenv('OPENAI_API_KEY'))
+# RAG 配置从环境变量读取，默认启用
+use_rag = os.getenv('USE_RAG', 'true').lower() == 'true'
+rag_top_k = int(os.getenv('RAG_TOP_K', '2'))
+rag_similarity_threshold = float(os.getenv('RAG_SIMILARITY_THRESHOLD', '0.3'))
+
+counselor = EmotionalCounselor(
+    api_key=os.getenv('OPENAI_API_KEY'),
+    use_rag=use_rag,
+    rag_top_k=rag_top_k,
+    rag_similarity_threshold=rag_similarity_threshold
+)
 
 # 初始化翻译服务
 translation_service = TranslationService()
@@ -37,6 +47,7 @@ def chat():
         
         user_message = sanitize_input(data.get('message', ''))
         session_id = data.get('session_id', 'default')
+        use_rag = data.get('use_rag')  # 可选：覆盖默认 RAG 设置
         
         if not user_message:
             return jsonify({'error': '消息不能为空'}), 400
@@ -50,7 +61,8 @@ def chat():
         # 获取 AI 回复
         response = counselor.get_response(
             user_message=user_message,
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
+            use_rag=use_rag
         )
         
         # 更新会话历史
@@ -66,7 +78,8 @@ def chat():
         return jsonify({
             'message': response['message'],
             'emotion': response.get('emotion', 'neutral'),
-            'session_id': session_id
+            'session_id': session_id,
+            'rag_enabled': use_rag if use_rag is not None else counselor.use_rag
         })
         
     except Exception as e:

@@ -7,20 +7,27 @@ import re
 class EmotionalCounselor:
     """恋爱情绪咨询 AI 核心类"""
     
-    def __init__(self, api_key, model="deepseek-chat"):
+    def __init__(self, api_key, model="deepseek-chat", use_rag=True, 
+                 rag_top_k=2, rag_similarity_threshold=0.3):
         self.api_key = api_key
         self.model = model
+        self.use_rag = use_rag
+        self.rag_top_k = rag_top_k
         openai.api_key = api_key
         
         # 配置 DeepSeek API
         openai.api_base = "https://api.deepseek.com/v1"
         
         # 初始化 RAG 系统
-        self.rag = RAGSystem()
+        self.rag = RAGSystem(
+            use_vector_db=use_rag,
+            similarity_threshold=rag_similarity_threshold
+        )
         
         if api_key and api_key != "your_openai_api_key_here":
             print(f"✅ API Key configured: {api_key[:20]}...")
             print(f"✅ Using model: {model}")
+            print(f"✅ RAG enabled: {use_rag}")
         else:
             print("⚠️ 未配置 API Key，将使用演示模式")
     
@@ -35,13 +42,14 @@ class EmotionalCounselor:
         
         return 'neutral'
     
-    def get_response(self, user_message, conversation_history=None):
+    def get_response(self, user_message, conversation_history=None, use_rag=None):
         """
         获取 AI 回复
         
         Args:
             user_message: 用户消息
             conversation_history: 对话历史
+            use_rag: 是否使用 RAG（None 表示使用默认设置）
             
         Returns:
             dict: 包含回复消息和情绪分析
@@ -57,12 +65,17 @@ class EmotionalCounselor:
             print("💡 使用演示模式回复")
             return self._get_demo_response(user_message, detected_emotion)
         
-        # 使用 RAG 检索相关知识
-        rag_results = self.rag.search(user_message, top_k=2)
-        rag_context = self.rag.format_context(rag_results)
+        # 确定是否使用 RAG
+        rag_enabled = use_rag if use_rag is not None else self.use_rag
         
-        if rag_context:
-            print(f"💡 找到 {len(rag_results)} 条相关知识")
+        # 使用 RAG 检索相关知识
+        rag_context = ""
+        if rag_enabled:
+            rag_results = self.rag.search(user_message, top_k=self.rag_top_k)
+            rag_context = self.rag.format_context(rag_results)
+            
+            if rag_context:
+                print(f"💡 RAG: 找到 {len(rag_results)} 条相关知识")
         
         # 构建增强后的系统提示词
         enhanced_prompt = SYSTEM_PROMPT
